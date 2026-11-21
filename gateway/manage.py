@@ -229,6 +229,12 @@ def upsert_pool(state: Any, data: dict[str, Any]) -> None:
         entry["default_model"] = str(data["default_model"])
     else:
         entry.pop("default_model", None)
+    # Only replace credentials when explicitly supplied (quick-add flow).
+    if "keys" in data:
+        raw_keys = data["keys"]
+        if isinstance(raw_keys, str):
+            raw_keys = [line.strip() for line in raw_keys.replace(",", "\n").splitlines()]
+        entry["keys"] = [str(k).strip() for k in raw_keys if str(k).strip()]
     apply(state)
 
 

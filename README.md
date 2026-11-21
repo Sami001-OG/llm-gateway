@@ -38,7 +38,10 @@ A built-in, dependency-free control center is available at **`http://<host>:<por
   health bars, and a route summary.
 - **Accounts** — pick a pool, paste dozens/hundreds of keys at once, drag rows or
   use ↑ ↓ to set priority, disable/enable individual accounts, remove them, and
-  see per-key success/failure counts and cooldown state.
+  see per-key success/failure counts and cooldown state. **Quick add provider**
+  creates a ready-made pool for OpenAI, Anthropic, Gemini, Groq, OpenRouter,
+  Cerebras or local Ollama — fill in the key and the model IDs from that
+  provider's current docs.
 - **Endpoints** — create and edit model aliases. Each alias maps to one pool or
   an **ordered failover list** across pools, with an optional upstream model
   override. This is where you "select accounts for the endpoint".
@@ -278,6 +281,24 @@ If you are unsure, prefer the sanctioned routes: raise your API tier, request
 higher limits, add usage credits, or use Batch/Background APIs. This tool is a
 legitimate load balancer, not a way around provider enforcement.
 
+### Free and low-cost API options
+
+The dashboard's **Quick add provider** flow can wire these up in seconds:
+
+| Option | What it gives you |
+| --- | --- |
+| **OpenAI API Free tier** | OpenAI's rate-limit docs list a Free tier with a **$100/month** usage limit in allowed geographies. Model availability varies by organization — check `Settings → Organization → Limits` and `GET /v1/models` with your key. GPT-6 models require at least Build in some accounts. |
+| **Google Gemini API** | Has a free tier with real API keys via AI Studio; usable through its OpenAI-compatible endpoint. Confirm current free model IDs and limits in AI Studio. |
+| **Groq / Cerebras** | Publish free API tiers with per-minute limits. Good for high-speed, cheaper models. |
+| **OpenRouter** | One key for many providers, including free models. One account per person; respect its rate limits. |
+| **Local models (Ollama / llama.cpp)** | No quota at all. `ollama serve`, pull a model, then add a pool with `base_url: http://127.0.0.1:11434/v1` and any placeholder key. |
+
+A few legitimately-owned keys from **different providers** are a good fit for
+this gateway: each has its own quota, so rotation actually helps. Farming many
+free accounts from the same provider is against most providers' terms and will
+get them banned — don't do it. Free **chat accounts** (ChatGPT/Claude apps) have
+no API at all and cannot be used here.
+
 ---
 
 ## Known limitations
@@ -295,9 +316,15 @@ legitimate load balancer, not a way around provider enforcement.
 python3 -m unittest discover -s tests -v
 ```
 
-24 integration tests using a local mock upstream — no real keys or network
+26 integration tests using a local mock upstream — no real keys or network
 needed. Covers rotation, cooldowns, all three endpoints, streaming, tool
-translation, auth, admin API, web dashboard API, and config expansion.
+translation, auth, admin API, web dashboard API, provider presets and config
+expansion.
+
+The dashboard was additionally rendered and exercised with **Playwright** at
+1440, 768 and 390 px: login, all six views, every modal, Escape-to-close,
+and horizontal-overflow checks — zero console errors. See `DESIGN.md` for the
+design system and motion rules.
 
 ## Sources
 

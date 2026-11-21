@@ -591,6 +591,34 @@ class UITests(unittest.IsolatedAsyncioTestCase):
         state = (await self.client.get("/admin/ui/state", headers=self.admin)).json()["data"]
         self.assertEqual(len(state["tokens"]["client"]), 1)
 
+    async def test_provider_presets(self) -> None:
+        r = await self.client.get("/admin/ui/presets", headers=self.admin)
+        self.assertEqual(r.status_code, 200)
+        presets = r.json()["data"]
+        self.assertGreaterEqual(len(presets), 6)
+        ids = {p["id"] for p in presets}
+        self.assertTrue({"openai", "anthropic", "groq", "gemini", "ollama"}.issubset(ids))
+        for p in presets:
+            self.assertTrue(p["base_url"].startswith("http"))
+
+    async def test_quick_add_pool_with_keys(self) -> None:
+        r = await self.client.post(
+            "/admin/ui/pools",
+            json={
+                "name": "groq_free", "provider": "openai",
+                "base_url": "https://api.groq.com/openai/v1",
+                "models": ["llama-3.3-70b-versatile"],
+                "keys": "gsk_test_a\ngsk_test_b",
+            },
+            headers=self.admin,
+        )
+        self.assertEqual(r.status_code, 200)
+        state = (await self.client.get("/admin/ui/state", headers=self.admin)).json()["data"]
+        names = [p["name"] for p in state["pools"]]
+        self.assertIn("groq_free", names)
+        groq = next(p for p in state["pools"] if p["name"] == "groq_free")
+        self.assertEqual(len(groq["keys"]), 2)
+
     async def test_settings_update(self) -> None:
         r = await self.client.post(
             "/admin/ui/settings",

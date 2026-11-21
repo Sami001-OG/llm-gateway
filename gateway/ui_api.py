@@ -9,7 +9,7 @@ from typing import Any, Callable
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 
-from . import manage
+from . import manage, presets
 
 log = logging.getLogger("gateway.ui_api")
 
@@ -51,6 +51,10 @@ def endpoint(fn: Callable) -> Callable:
 async def state_view(request: Request) -> Response:
     state = request.app.state.gateway
     return _ok(manage.ui_state(state))
+
+
+async def presets_view(request: Request) -> Response:
+    return _ok(presets.get_presets())
 
 
 # ----- accounts ------------------------------------------------------------ #
@@ -139,6 +143,7 @@ def routes() -> list[Any]:
 
     return [
         Route("/admin/ui/state", state_view, methods=["GET"]),
+        Route("/admin/ui/presets", presets_view, methods=["GET"]),
         Route("/admin/ui/keys/add", add_keys, methods=["POST"]),
         Route("/admin/ui/keys/remove", remove_key, methods=["POST"]),
         Route("/admin/ui/keys/reorder", reorder_keys, methods=["POST"]),
