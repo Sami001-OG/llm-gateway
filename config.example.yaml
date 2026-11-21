@@ -1,0 +1,79 @@
+# =============================================================================
+# LLM Gateway configuration
+# Model IDs below reflect the current catalogs (verified Nov 2026).
+# Secrets can be inline, ${ENV_VAR}, or file:/path/to/keys.txt (one per line).
+# =============================================================================
+
+server:
+  host: 0.0.0.0
+  port: 8000
+  # Clients send: Authorization: Bearer <token>  (or x-api-key for Claude Code)
+  auth_tokens:
+    - "change-me-client-token"
+  # Separate tokens for /admin/* endpoints.
+  admin_tokens:
+    - "change-me-admin-token"
+  log_level: INFO
+  request_timeout: 120
+
+defaults:
+  max_retries: 4
+  selection: least_used       # least_used | round_robin | random
+  cooldown:
+    rate_limit: 60
+    quota: 21600
+    auth_error: 86400
+    server_error: 10
+    max_backoff: 600
+
+# -----------------------------------------------------------------------------
+# Pools = groups of interchangeable API accounts.
+# IMPORTANT: keys must belong to DIFFERENT organizations/billing accounts to
+# get independent quotas. Multiple keys in one org/project share one limit.
+# -----------------------------------------------------------------------------
+pools:
+  openai_main:
+    provider: openai
+    base_url: https://api.openai.com/v1
+    models:
+      - gpt-6.2-astra
+      - gpt-6.2-sol
+      - gpt-6.1-terra
+      - gpt-6-luna
+    keys:
+      - ${OPENAI_KEY_1}
+      - ${OPENAI_KEY_2}
+      # - file:/etc/secrets/openai_keys.txt
+
+  anthropic_main:
+    provider: anthropic
+    base_url: https://api.anthropic.com/v1
+    models:
+      - claude-opus-5-5
+      - claude-sonnet-5-5
+      - claude-haiku-5-5
+      - claude-fable-5-2
+    keys:
+      - ${ANTHROPIC_KEY_1}
+      - ${ANTHROPIC_KEY_2}
+      # - file:/etc/secrets/anthropic_keys.txt
+
+# -----------------------------------------------------------------------------
+# Routes = public aliases. Forms:
+#   alias: {pool: POOL, model: OPTIONAL_UPSTREAM_MODEL}
+#   alias: {failover: [POOL_A, POOL_B]}
+# -----------------------------------------------------------------------------
+routes:
+  # OpenAI aliases
+  "astra": {pool: openai_main, model: gpt-6.2-astra}
+  "sol":   {pool: openai_main, model: gpt-6.2-sol}
+  "terra": {pool: openai_main, model: gpt-6.1-terra}
+  "luna":  {pool: openai_main, model: gpt-6-luna}
+
+  # Anthropic aliases
+  "claude":       {pool: anthropic_main, model: claude-sonnet-5-5}
+  "claude-opus":  {pool: anthropic_main, model: claude-opus-5-5}
+  "claude-haiku": {pool: anthropic_main, model: claude-haiku-5-5}
+
+  # Spread across every healthy account/provider
+  "auto": {failover: [openai_main, anthropic_main]}
